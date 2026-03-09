@@ -1,6 +1,6 @@
 import re
 
-def extract_suspicious_ips(log_file_path):
+def extract_suspicious_ips(log_file_path, output_file_path):
     print(f"[*] Analyzing {log_file_path} for brute-force attacks...\n")
     failed_attempts = {}
     
@@ -14,25 +14,27 @@ def extract_suspicious_ips(log_file_path):
                 if "Failed password" in line:
                     ips = ip_pattern.findall(line)
                     for ip in ips:
-                        if ip in failed_attempts:
-                            failed_attempts[ip] += 1
-                        else:
-                            failed_attempts[ip] = 1
+                        failed_attempts[ip] = failed_attempts.get(ip, 0) + 1
                             
-        print("[+] Suspicious IPs Found:")
-        print("-" * 35)
-        print("IP Address\t\tAttempts")
-        print("-" * 35)
-        
         # Sort IPs by number of attempts (Descending)
         sorted_ips = sorted(failed_attempts.items(), key=lambda item: item[1], reverse=True)
         
-        for ip, count in sorted_ips:
-            print(f"{ip}\t\t{count}")
+        # Output to screen and write to file
+        with open(output_file_path, 'w') as out_file:
+            header = "IP Address\t\tAttempts\n" + ("-" * 35) + "\n"
+            print(header.strip())
+            out_file.write(header)
+            
+            for ip, count in sorted_ips:
+                record = f"{ip}\t\t{count}\n"
+                print(record.strip())
+                out_file.write(record)
+                
+        print(f"\n[+] Results successfully saved to: {output_file_path}")
             
     except FileNotFoundError:
         print("[-] Error: Log file not found. Please provide a valid path.")
 
 if __name__ == "__main__":
-    # Example usage: Replace 'auth.log' with the actual log file path
-    extract_suspicious_ips("auth.log")
+    # Example usage:
+    extract_suspicious_ips("auth.log", "suspicious_ips.txt")
